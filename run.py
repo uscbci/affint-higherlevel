@@ -6,38 +6,45 @@ import json
 import os,sys
 from zipfile import ZipFile
 from subprocess import call
+import shutil
 
 #TASK
 #In the future we can loop through a list of tasks
-task="emoreg"
-copes={"emoreg":[1,2,3,4,5,6,7,8,9,10]}
+# emoreg: 10 contrasts
+# tom: 12 contrasts
+# faces: 5 contrasts
+task="faceemotion"
+copes={"emoreg":[1,2,3,4,5,6,7,8,9,10],"tom":[1,2,3,4,5,6,7,8,9,10,11,12],"faceemotion":[1,2,3,4,5]}
 
 # Set directories in flywheel gear
 FLYWHEEL_BASE = '/flywheel/v0'
 OUTPUT_DIR='%s/output' % FLYWHEEL_BASE
 INPUT_DIR='%s/input' % FLYWHEEL_BASE
+COMMAND_LOCATION = FLYWHEEL_BASE
+
+if not os.path.exists(INPUT_DIR):
+	os.mkdir(INPUT_DIR)
 
 # Grab Config
-# CONFIG_FILE_PATH = '/flywheel/v0/config.json'
-# with open(CONFIG_FILE_PATH) as config_file:
-#     config = json.load(config_file)
-# print(config)
-# api_key = config['inputs']['api-key']['key']
-# analysis_id = config['destination']['id']
-
+CONFIG_FILE_PATH = '/flywheel/v0/config.json'
+with open(CONFIG_FILE_PATH) as config_file:
+    config = json.load(config_file)
+api_key = config['inputs']['api-key']['key']
+analysis_id = config['destination']['id']
 
 ##---------------------------------------
 ## VARIABLES TO ACTIVATE FOR LOCAL TESTING
 ##---------------------------------------
 
-debug = 1
+download_files = 1 	#Can turn this off if we have the files already
+debug = 1		 	#Will print out debugging info
 
-FLYWHEEL_BASE = '/Users/bciuser/fMRI/flywheel/affint/local_gear_testing'
-OUTPUT_DIR='%s/output' % FLYWHEEL_BASE
-INPUT_DIR='%s/input' % FLYWHEEL_BASE
-COMMAND_LOCATION = '/Users/bciuser/fMRI/flywheel/affint/affint-higherlevel'
-api_key = "uscdni.flywheel.io:oepWHsARl4CUfN6me6"
-analysis_id = "5e58095e0c07dc25fd36bf72"
+if debug:
+	print("Debugging mode is ON")
+	print(config)
+	base = os.listdir(FLYWHEEL_BASE)
+	print(base)
+
 
 ##---------------------------------------
 ## GET SUBJECT LIST AND LOWER-LEVEL DATA
@@ -86,17 +93,17 @@ for session in sessions:
 		featzip = featzip[0]
 		print("Downloading found file: %s" % featzip.name)
 		dlfile = "%s/%s" % (INPUT_DIR,featzip.name)
-		if not debug:
+		if download_files:
 			featzip.download(dlfile)
 		valid_subjects.append(subject)
 
 		#lets unzip it
 		output_folder = "%s/%s" % (INPUT_DIR,subject)
 		print("unzipping...")
-		if not debug:
+		if download_files:
 			with ZipFile(dlfile,'r') as zipObj:
 				zipObj.extractall(path=output_folder)
-		input_feat_folders.append("%s/%s/flywheel/v0/output/%s_emoreg.feat" % (INPUT_DIR,subject,subject))
+		input_feat_folders.append("%s/%s/flywheel/v0/output/%s_%s.feat" % (INPUT_DIR,subject,subject,task))
 
 	else:
 		print("Did not find affint-feat analysis file for subject %s" % subject)
@@ -110,14 +117,18 @@ print("Will include these feats in the analysis: %s" % input_feat_folders)
 ##---------------------------------------
 
 #Create file with inputfeats
+
 inputfeats_filename = "%s/inputfeats.txt" % FLYWHEEL_BASE
+if os.path.exists(inputfeats_filename):
+	os.remove(inputfeats_filename)
+
 featfile = open(inputfeats_filename,'w')
 for feat in input_feat_folders:
 	featfile.write(feat + "\n")
 featfile.close()
 
 #create higher level design
-featoutputname = task + ".gfeat"
+featoutputname = "%s/%s.gfeat" % (OUTPUT_DIR,task)
 designfilename = "%s/%s.fsf" % (FLYWHEEL_BASE,task)
 lowerlevelcopelist = " ".join([str(elem) for elem in copes[task]]) 
 
@@ -129,7 +140,36 @@ call(command,shell=True)
 ## RUN THE HIGHER LEVEL DESIGN
 ##---------------------------------------
 
-#RUN FEAT
-command = "feat %s" % designfilename
+#MOVE A COPY TO THE OUTPUT FOLDER SO WE HAVE IT
+command = "cp %s %s/%s.fsf" % (designfilename,OUTPUT_DIR,task)
 print(command)
 call(command,shell=True)
+
+#RUN FEAT
+#We will source the FSL config script before invoking feat
+print("Starting feat analysis...")
+command = "export USER=Flywheel; . $FSLDIR/etc/fslconf/fsl.sh; time feat %s" % designfilename
+print(command)
+call(command,shell=True)
+
+
+##---------------------------------------
+## PACKAGE THE OUTPUT
+##---------------------------------------
+
+for cope in copes[task]:
+	input_html_file = "%s/cope%d.feat/report_poststats.html" % (featoutputname,cope)
+	output_html_file = "%s/%s_report_poststats_cope%d.html" % (OUTPUT_DIR,task,cope)
+
+	print("Preparing %s to %s" % (input_html_file,output_html_file))
+
+	command = 'python /opt/webpage2html/webpage2html.py -q -s %s > "%s"' % (input_html_file,output_html_file)
+	print(command)
+	call(command,shell=True)
+
+print("\nZipping feat directory....")
+output_filename = "%s/%s" % (OUTPUT_DIR,task)
+shutil.make_archive(output_filename, 'zip', featoutputname)
+
+print("\nCleaning up...")
+shutil.rmtree(featoutputname, ignore_errors=True)

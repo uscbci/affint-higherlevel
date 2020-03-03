@@ -21,8 +21,8 @@ args = parser.parse_args()
 
 print()
 
-#FLYWHEEL_BASE = '/flywheel/v0' # On Flywheel
-FLYWHEEL_BASE = '/Users/bciuser/fMRI/flywheel/affint/local_gear_testing/input' #Local testing
+FLYWHEEL_BASE = '/flywheel/v0' # On Flywheel
+#FLYWHEEL_BASE = '/Users/bciuser/fMRI/flywheel/affint/local_gear_testing/input' #Local testing
 template = "%s/template.fsf" % FLYWHEEL_BASE
 standard = "%s/data/standard/MNI152_T1_2mm_brain" % os.environ['FSLDIR']
 
@@ -70,7 +70,7 @@ numcontrasts = 1 + 2*numextraevs
 
 print()
 command = "sed -e 's/FEAT_OUTPUT_DIR/%s/g' -e 's/NUM_INPUTS/%s/g' -e 's/STANDARD_IMAGE/%s/g' -e 's/NUM_LOWER_LEVELS/%s/g' -e 's/NUMEVSORIG/%s/g' -e 's/NUMEVSREAL/%s/g' -e 's/NUMCONTRASTSORIG/%s/g' -e 's/NUMCONTRASTSREAL/%s/g' %s > %s" % (args.featoutputname.replace('/','\/'),numinputs,standard.replace('/','\/'),numtotallowerlevels,numevs,numevs,numcontrasts,numcontrasts,template,args.outputname)
-print(command)
+#print(command)
 call(command,shell=True)
 
 #-----------------------------
@@ -86,7 +86,7 @@ for x in range(1,numtotallowerlevels+1):
 	text = "set fmri(copeinput.%s) %d" % (x,value)
 	copetext = copetext + text + "\\\n"
 command = "sed -ie 's/COPEINPUT/%s/g' %s" % (copetext,args.outputname)
-print(command)
+#print(command)
 call(command,shell=True)
 
 #-----------------------------
@@ -98,7 +98,7 @@ for x,feat in enumerate(inputfeatfolders):
 	text = 'set feat_files(%d) "%s" ' % (x+1,feat.replace('/','\/')) 
 	feattext = feattext + text + "\\\n"
 command = "sed -ie 's/FEATFILES/%s/g' %s" % (feattext,args.outputname)
-print(command)
+#print(command)
 call(command,shell=True)
 
 
@@ -111,7 +111,7 @@ for x in range(1,numinputs+1):
 	text = "set fmri(evg%d.1) 1" % (x)
 	evtext = evtext + text + "\\\n"
 command = "sed -ie 's/EV1VALUES/%s/g' %s" % (evtext,args.outputname)
-print(command)
+#print(command)
 call(command,shell=True)
 
 #-----------------------------
@@ -122,5 +122,5 @@ for x in range(1,numinputs+1):
 	text = "set fmri(groupmem.%d) 1" % (x)
 	grouptext = grouptext + text + "\\\n"
 command = "sed -ie 's/EV1GROUPS/%s/g' %s" % (grouptext,args.outputname)
-print(command)
+#print(command)
 call(command,shell=True)
