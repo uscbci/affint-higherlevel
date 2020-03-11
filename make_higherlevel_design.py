@@ -202,6 +202,13 @@ if regressors:
 	print(command)
 	call(command,shell=True)	
 
+else:
+	print("Cleaning up for no covariates")
+	#We have to get rid of the regressor text
+	command = "sed -ie 's/REGRESSORTEXT//g' %s" % (args.outputname)
+	print(command)
+	call(command,shell=True)
+
 # Title for contrast_real 2
 # set fmri(conname_real.2) ""
 # set fmri(con_real2.1) 0.0

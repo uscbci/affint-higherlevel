@@ -39,7 +39,7 @@ if debug:
 	print(base)
 
 #tasks = ["faceemotion","emoreg","tom"]
-tasks = ["faceemotion"]
+tasks = ["faceemotion","emoreg","tom"]
 copes={"emoreg":[1,2,3,4,5,6,7,8,9,10],"tom":[1,2,3,4,5,6,7,8,9,10,11,12],"faceemotion":[1,2,3,4,5]}
 #regressors = ["IRI_EC","IRI_PT"]
 regressors = []
@@ -114,8 +114,6 @@ for task in tasks:
 					zipObj.extractall(path=output_folder)
 			input_feat_folders.append("%s/%s/flywheel/v0/output/%s_%s.feat" % (INPUT_DIR,subject,subject,task))
 
-		else:
-			print("Did not find affint-feat analysis file for subject %s" % subject)
 
 	#Make the EV files for this task
 	for regressor in regressors:
