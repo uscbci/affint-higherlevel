@@ -2,7 +2,7 @@
 	"name": "affint-higherlevel",
 	"label": "BCI: Affective Intelligence Higher Level FEAT analysis",
 	"description": "This gear does a higher-level GLM analysis for the Affective Intelligence project.",
-	"version": "0.0.51",
+	"version": "0.0.52",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"

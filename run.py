@@ -103,9 +103,9 @@ for task in tasks:
 				print('Found subject: %s' % subject)
 
 				#Find the lower-level feat analysis for this subject
-				analyses = fw.get(session.id).analyses
+				analyses = session.analyses
 				for analysis in analyses:
-					if "affint-feat" in analysis.label:
+					if analysis.gear_info.name == "affint-feat":
 						print(analysis.label)
 						feat_analysis = analysis
 
@@ -145,7 +145,7 @@ for task in tasks:
 			else:
 				evfilelist.append(evfilename)
 
-    final_input_feat_folders = []
+	final_input_feat_folders = []
 	for folder in input_feat_folders:
 		pattern = "(AI\d+)_.*"
 		thissubject = re.match(pattern,folder).groups()[0]
