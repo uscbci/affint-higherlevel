@@ -10,6 +10,7 @@ import argparse
 from subprocess import call
 import os
 import re
+import itertools
 
 #command line options
 parser = argparse.ArgumentParser()
@@ -24,7 +25,7 @@ args = parser.parse_args()
 
 
 print("")
-
+print("Creating higher level design for task %s" % args.task)
 
 
 FLYWHEEL_BASE = '/flywheel/v0' # On Flywheel
@@ -170,10 +171,21 @@ if regressors:
 			regressortext = regressortext + "\\n" + text
 			x=x+1
 
-		#Figure out contrasts. Contrast numbers are 2 x (evnum-1)
+		#EV options
+		text = "set fmri(deriv_yn%d) 0" % evnum
+		regressortext = regressortext +"\\n" + text
+
+		text = "set fmri(tempfilt_yn%d) 0" % evnum
+		regressortext = regressortext +"\\n" + text
+
+
+		#CONTRASTS: Contrast numbers are 2 x (evnum-1)
 		contrastnum = 2 * (evnum-1)
 		text = "set fmri(conname_real.%d) \"%s+\"" % (contrastnum,regressortitle)
 		regressortext = regressortext + "\\n" + text
+
+		text = "set fmri(conpic_real.%d) 1" % contrastnum
+		regressortext = regressortext +"\\n" + text
 
 		for ev in range(1,numevs+1):
 			if ev == contrastnum:
@@ -186,6 +198,9 @@ if regressors:
 		text = "set fmri(conname_real.%d) \"%s-\"" % (contrastnum+1,regressortitle)
 		regressortext = regressortext + "\\n" + text
 
+		text = "set fmri(conpic_real.%d) 1" % (contrastnum+1)
+		regressortext = regressortext +"\\n" + text
+
 		for ev in range(1,numevs+1):
 			if ev == contrastnum:
 				contrastvalue = -1
@@ -194,8 +209,16 @@ if regressors:
 			text = "set fmri(con_real%d.%d) %d" % (contrastnum+1,ev,contrastvalue)
 			regressortext = regressortext + "\\n" + text
 
+		#Describe orthogonalizations
+		allevs = list(range(0,numevs+1))
+		combos = list(itertools.product(allevs,allevs))
+		for combo in combos:
+			text = "set fmri(ortho%d.%d) 0" % (combo[0],combo[1])
+			regressortext = regressortext + "\\n" + text
+
 		print(regressortext)
 		evnum = evnum + 1
+
 
 	regressortext = regressortext.replace("\n","\\\n")
 	command = "sed -ie 's/REGRESSORTEXT/%s/g' %s" % (regressortext,args.outputname)

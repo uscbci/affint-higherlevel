@@ -25,6 +25,19 @@ with open(CONFIG_FILE_PATH) as config_file:
 api_key = config['inputs']['api-key']['key']
 analysis_id = config['destination']['id']
 
+subjectinput = config['config']['subjects']
+regressors = config['config']['covariates']
+exclude = config['config']['exclude']
+tasks = config['config']['task']
+
+def zipdir(path, ziph):
+    # ziph is zipfile handle
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file), 
+                       os.path.relpath(os.path.join(root, file), 
+                                       os.path.join(path, '..')))
+
 ##---------------------------------------
 ## VARIABLES TO ACTIVATE FOR LOCAL TESTING
 ##---------------------------------------
@@ -39,14 +52,19 @@ if debug:
 	print(base)
 
 #tasks = ["faceemotion","emoreg","tom"]
-tasks = ["faceemotion","emoreg","tom"]
-copes={"emoreg":[1,2,3,4,5,6,7,8,9,10],"tom":[1,2,3,4,5,6,7,8,9,10,11,12],"faceemotion":[1,2,3,4,5]}
-#regressors = ["IRI_EC","IRI_PT"]
-regressors = []
 # emoreg: 10 contrasts
 # tom: 12 contrasts
 # faces: 5 contrasts
-	
+
+copes={"emoreg":[1,2,3,4,5,6,7,8,9,10],"tom":[1,2,3,4,5,6,7,8,9,10,11,12],"faceemotion":[1,2,3,4,5]}
+
+subjectstoinclude = subjectinput.split()
+regressors = regressors.split()
+tasks = tasks.split()
+
+if regressors[0]=="none":
+	regressors=[]
+
 ##---------------------------------------
 ## CONNECT TO FLYWHEEL AND GET PROJECT INFO
 ##---------------------------------------
@@ -70,58 +88,75 @@ for task in tasks:
 	## GET SUBJECT LIST AND LOWER-LEVEL DATA
 	##---------------------------------------
 
+	print('Starting task %s' % task)
 	#Find subjects associated with this project who have valid analyses
 	valid_subjects = []
 	valid_subject_containers = []
 	input_feat_folders = []
 	for session in sessions:
 
-		#Loop through subjects
+		#Looping through subjects
 		subject = session.subject.label
-		subject_container = session.subject
-		print('Found subject: %s' % subject)
+		if subjectstoinclude[0]=="all" or subject in subjectstoinclude:
+			if subject not in exclude:
+				subject_container = session.subject
+				print('Found subject: %s' % subject)
 
-		#Find the lower-level feat analysis for this subject
-		analyses = fw.get(session.id).analyses
-		for analysis in analyses:
-			if "affint-feat" in analysis.label:
-				print(analysis.label)
-				feat_analysis = analysis
+				#Find the lower-level feat analysis for this subject
+				analyses = fw.get(session.id).analyses
+				for analysis in analyses:
+					if "affint-feat" in analysis.label:
+						print(analysis.label)
+						feat_analysis = analysis
 
-		filename = "%s_%s.zip" % (subject,task)
-		files = feat_analysis.files
-		if files:
-			featzip = [file for file in files if file.name == filename]
-		else:
-			print("Did not find affint-feat analysis file for subject %s" % subject)
-			featzip = ""
+				filename = "%s_%s.zip" % (subject,task)
+				files = feat_analysis.files
+				if files:
+					featzip = [file for file in files if file.name == filename]
+				else:
+					print("Did not find zipfile for task %s in affint-feat analysis file for subject %s" % (task,subject))
+					featzip = ""
 
-		#Download the feat folder and unzip it
-		if featzip:
-			featzip = featzip[0]
-			print("Downloading found file: %s" % featzip.name)
-			dlfile = "%s/%s" % (INPUT_DIR,featzip.name)
-			if download_files:
-				featzip.download(dlfile)
-			valid_subjects.append(subject)
-			valid_subject_containers.append(subject_container)
+				#Download the feat folder and unzip it
+				if featzip:
+					featzip = featzip[0]
+					print("Downloading found file: %s" % featzip.name)
+					dlfile = "%s/%s" % (INPUT_DIR,featzip.name)
+					if download_files:
+						featzip.download(dlfile)
+					valid_subjects.append(subject)
+					valid_subject_containers.append(subject_container)
 
-			#lets unzip it
-			output_folder = "%s/%s" % (INPUT_DIR,subject)
-			print("unzipping...")
-			if download_files:
-				with ZipFile(dlfile,'r') as zipObj:
-					zipObj.extractall(path=output_folder)
-			input_feat_folders.append("%s/%s/flywheel/v0/output/%s_%s.feat" % (INPUT_DIR,subject,subject,task))
+					#lets unzip it
+					output_folder = "%s/%s" % (INPUT_DIR,subject)
+					print("unzipping...")
+					if download_files:
+						with ZipFile(dlfile,'r') as zipObj:
+							zipObj.extractall(path=output_folder)
+					input_feat_folders.append("%s/%s/flywheel/v0/output/%s_%s.feat" % (INPUT_DIR,subject,subject,task))
 
 
 	#Make the EV files for this task
+	evfilelist=[]
 	for regressor in regressors:
-			evfilename = make_evfile(regressor,valid_subject_containers,task,OUTPUT_DIR,fw)
-			evfilelist.append(evfilename)
+			(final_subject_list,evfilename) = make_evfile(regressor,valid_subject_containers,task,OUTPUT_DIR,fw)
+			if evfilename=="error":
+				print("Will not include regressor due to missing data.")
+			else:
+				evfilelist.append(evfilename)
 
-	print("Will include these subjects in the analysis: %s" % valid_subjects)
-	print("Will include these feats in the analysis: %s" % input_feat_folders)
+    final_input_feat_folders = []
+	for folder in input_feat_folders:
+		pattern = "(AI\d+)_.*"
+		thissubject = re.match(pattern,folder).groups()[0]
+		if thissubject in final_subject_list:
+			final_input_feat_folders.append(folder)
+
+	print("Will include these subjects in the analysis: %s" % final_subject_list)
+
+
+	print("Will include these feats in the analysis: %s" % final_input_feat_folders)
+	print("----------------------------------------------------")
 
 	##---------------------------------------
 	## CREATE A HIGHER LEVEL DESIGN FILE
@@ -134,7 +169,7 @@ for task in tasks:
 		os.remove(inputfeats_filename)
 
 	featfile = open(inputfeats_filename,'w')
-	for feat in input_feat_folders:
+	for feat in final_input_feat_folders:
 		featfile.write(feat + "\n")
 	featfile.close()
 
@@ -147,10 +182,12 @@ for task in tasks:
 	command = "%s/make_higherlevel_design.py --inputfeats %s --featoutputname %s --outputname %s --lowerlevelcopes %s --task %s" % (COMMAND_LOCATION,inputfeats_filename,featoutputname, designfilename,lowerlevelcopelist,task)
 	
 	if regressors:
-		command = "%s --regressors %s" % (command,evfilelist)
+		command = "%s --regressors %s" % (command,evfilestring)
 
 	print(command)
 	call(command,shell=True)
+
+	print("AFTER make_higherlevel-----------------------------------------------------------")
 
 	##---------------------------------------
 	## RUN THE HIGHER LEVEL DESIGN
@@ -184,8 +221,12 @@ for task in tasks:
 		call(command,shell=True)
 
 	print("\nZipping feat directory....")
-	output_filename = "%s/%s" % (OUTPUT_DIR,task)
-	shutil.make_archive(output_filename, 'zip', featoutputname)
+	output_filename = "%s/%s.zip" % (OUTPUT_DIR,task)
+	#shutil.make_archive(output_filename, 'zip', featoutputname)
+
+	zf = ZipFile(output_filename, mode='w', allowZip64 = True)
+	zipdir(featoutputname,zf)
+	zf.close()
 
 	print("\nCleaning up...")
 	shutil.rmtree(featoutputname, ignore_errors=True)

@@ -185,7 +185,7 @@ set fmri(thresh) 3
 set fmri(prob_thresh) 0.05
 
 # Z threshold
-set fmri(z_thresh) 3.1
+set fmri(z_thresh) 2.3
 
 # Z min/max for colour rendering
 # 0 : Use actual Z min/max
@@ -309,6 +309,9 @@ set fmri(deriv_yn1) 0
 
 # Custom EV file (EV 1)
 set fmri(custom1) "dummy"
+
+# Setup Orthogonalisation at higher level?
+set fmri(level2orth) 0
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0

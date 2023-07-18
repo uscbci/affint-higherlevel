@@ -2,13 +2,29 @@
 	"name": "affint-higherlevel",
 	"label": "BCI: Affective Intelligence Higher Level FEAT analysis",
 	"description": "This gear does a higher-level GLM analysis for the Affective Intelligence project.",
-	"version": "0.0.21",
+	"version": "0.0.51",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
 		}
 	},
 	"config": {
+		"subjects": {
+        	"type": "string",
+        	"description": "List of subject codes separated by spaces or 'all' for all subjects"
+    	},
+    	"covariates": {
+        	"type": "string",
+        	"description": "List of behavioral covariates to include in the model as regressors or 'none' for no covariates"
+    	},
+    	"exclude": {
+        	"type": "string",
+        	"description": "List of subjects to exclude separated by spaces or 'none' to exclude none."
+    	},
+    	"task": {
+        	"type": "string",
+        	"description": "List of tasks separated by spaces, of: emoreg facemotion tom"
+        }
 	},
 	"environment": {
 		"COMMIT": "4dec20eba862335aaf1718d04b313bdc96e7dc8e",
