@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/conda/bin/python
 #
 # Script to construct a higher level design.fsf file to run a feat analysis.
 # We assume one group of subjects where EV1 models the mean and additional covariates are optional.
@@ -22,14 +22,11 @@ parser.add_argument("--outputname",help="design file output name", action="store
 parser.add_argument("--task",help="task name", action="store")
 args = parser.parse_args()
 
-
-
 print("")
 print("Creating higher level design for task %s" % args.task)
 
 
 FLYWHEEL_BASE = '/flywheel/v0' # On Flywheel
-#FLYWHEEL_BASE = '/Users/bciuser/fMRI/flywheel/affint/local_gear_testing/input' #Local testing
 template = "%s/template.fsf" % FLYWHEEL_BASE
 standard = "%s/data/standard/MNI152_T1_2mm_brain" % os.environ['FSLDIR']
 
@@ -96,6 +93,7 @@ for x in range(1,numtotallowerlevels+1):
 	text = "set fmri(copeinput.%s) %d" % (x,value)
 	copetext = copetext + text + "\\\n"
 command = "sed -ie 's/COPEINPUT/%s/g' %s" % (copetext,args.outputname)
+#
 #print(command)
 call(command,shell=True)
 
@@ -216,20 +214,20 @@ if regressors:
 			text = "set fmri(ortho%d.%d) 0" % (combo[0],combo[1])
 			regressortext = regressortext + "\\n" + text
 
-		print(regressortext)
+		#print(regressortext)
 		evnum = evnum + 1
 
 
 	regressortext = regressortext.replace("\n","\\\n")
 	command = "sed -ie 's/REGRESSORTEXT/%s/g' %s" % (regressortext,args.outputname)
-	print(command)
+	#print(command)
 	call(command,shell=True)	
 
 else:
 	print("Cleaning up for no covariates")
 	#We have to get rid of the regressor text
 	command = "sed -ie 's/REGRESSORTEXT//g' %s" % (args.outputname)
-	print(command)
+	#print(command)
 	call(command,shell=True)
 
 # Title for contrast_real 2

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/conda/bin/python
 
 import flywheel
 import re
@@ -8,6 +8,7 @@ from zipfile import ZipFile
 from subprocess import call
 import shutil
 from make_evfile import make_evfile
+from packaging import version
 
 # Set directories in flywheel gear
 FLYWHEEL_BASE = '/flywheel/v0'
@@ -69,14 +70,15 @@ if regressors[0]=="none":
 ## CONNECT TO FLYWHEEL AND GET PROJECT INFO
 ##---------------------------------------
 fw = flywheel.Client(api_key)
-analysis = fw.get(analysis_id)  
-parent  = analysis.parent
-if parent.type != 'project':
-	print('This gear must be run at the project level.')
-	exit()
-else:
-	print('Project found.')
-	projectid = parent.id
+# analysis = fw.get(analysis_id)  
+# parent  = analysis.parent
+# if parent.type != 'project':
+# 	print('This gear must be run at the project level.')
+# 	exit()
+# else:
+# 	print('Project found.')
+# 	projectid = parent.id
+projectid = '5d30b3665437ef00342d791e'
 project = fw.get(projectid)
 sessions = project.sessions()
 
@@ -93,10 +95,12 @@ for task in tasks:
 	valid_subjects = []
 	valid_subject_containers = []
 	input_feat_folders = []
-	for session in sessions:
+	for sess in sessions:
 
+		session = fw.get_session(sess.id)
 		#Looping through subjects
 		subject = session.subject.label
+		print("Retrieved session for subject %s" % subject)
 		if subjectstoinclude[0]=="all" or subject in subjectstoinclude:
 			if subject not in exclude:
 				subject_container = session.subject
@@ -106,8 +110,9 @@ for task in tasks:
 				analyses = session.analyses
 				for analysis in analyses:
 					if analysis.gear_info.name == "affint-feat":
-						print(analysis.label)
-						feat_analysis = analysis
+						if version.parse(analysis.gear_info.version) > version.parse("0.3.15"):
+							print(analysis.label)
+							feat_analysis = analysis
 
 				filename = "%s_%s.zip" % (subject,task)
 				files = feat_analysis.files
@@ -129,7 +134,7 @@ for task in tasks:
 
 					#lets unzip it
 					output_folder = "%s/%s" % (INPUT_DIR,subject)
-					print("unzipping...")
+					print("unzipping to... %s" % output_folder)
 					if download_files:
 						with ZipFile(dlfile,'r') as zipObj:
 							zipObj.extractall(path=output_folder)
@@ -138,16 +143,23 @@ for task in tasks:
 
 	#Make the EV files for this task
 	evfilelist=[]
-	for regressor in regressors:
-			(final_subject_list,evfilename) = make_evfile(regressor,valid_subject_containers,task,OUTPUT_DIR,fw)
-			if evfilename=="error":
-				print("Will not include regressor due to missing data.")
-			else:
-				evfilelist.append(evfilename)
+	if (len(regressors) > 0):
+		for regressor in regressors:
+				(final_subject_list,evfilename) = make_evfile(regressor,valid_subject_containers,task,OUTPUT_DIR,fw)
+				if evfilename=="error":
+					print("Will not include regressor due to missing data.")
+				else:
+					evfilelist.append(evfilename)
+	else:
+		final_subject_list = valid_subjects
+	
+	print("Final subject list:")
+	print(final_subject_list)
 
 	final_input_feat_folders = []
 	for folder in input_feat_folders:
-		pattern = "(AI\d+)_.*"
+		print("Checking if folder %s should be in final list..." % folder)
+		pattern = ".*(AI\d+)_.*"
 		thissubject = re.match(pattern,folder).groups()[0]
 		if thissubject in final_subject_list:
 			final_input_feat_folders.append(folder)

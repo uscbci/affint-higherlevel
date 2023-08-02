@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/conda/bin/python
 
 def make_evfile(regressor,subjects,task,outputdir,fw):
 

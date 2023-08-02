@@ -2,7 +2,7 @@
 #
 #
 
-FROM uscbci/fsl6:1.1
+FROM uscbci/fmri:1.8
 
 MAINTAINER Jonas Kaplan <jtkaplan@usc.edu>
 
