@@ -213,7 +213,8 @@ for task in tasks:
 	#RUN FEAT
 	#We will source the FSL config script before invoking feat
 	print("Starting feat analysis...")
-	command = "export USER=Flywheel; . $FSLDIR/etc/fslconf/fsl.sh; time feat %s" % designfilename
+	#command = "export USER=Flywheel; . $FSLDIR/etc/fslconf/fsl.sh; time feat %s" % designfilename
+	command = "time feat %s" % designfilename
 	print(command)
 	call(command,shell=True)
 
