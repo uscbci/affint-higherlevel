@@ -127,8 +127,11 @@ for task in tasks:
 					featzip = featzip[0]
 					print("Downloading found file: %s" % featzip.name)
 					dlfile = "%s/%s" % (INPUT_DIR,featzip.name)
-					if download_files:
-						featzip.download(dlfile)
+					if not os.path.exists(dlfile):
+						if download_files:
+							featzip.download(dlfile)
+					else:
+						print("Will not download %s, since it aready exists" % dlfile)
 					valid_subjects.append(subject)
 					valid_subject_containers.append(subject_container)
 
