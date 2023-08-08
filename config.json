@@ -1,0 +1,18 @@
+{
+	"config": {
+		"covariates": "none",
+		"exclude": "none",
+		"subjects": "all",
+		"task": "emoreg"
+	},
+	"destination": {
+		"id": "aex",
+		"type": "acquisition"
+	},
+	"inputs": {
+		"api-key": {
+			"base": "api-key",
+			"key": "uscdni.flywheel.io:6PHerGmeBeRc22DGwm"
+		}
+	}
+}

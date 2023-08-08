@@ -130,17 +130,18 @@ for task in tasks:
 					if not os.path.exists(dlfile):
 						if download_files:
 							featzip.download(dlfile)
+							
+							#lets unzip it
+							output_folder = "%s/%s" % (INPUT_DIR,subject)
+							print("unzipping to... %s" % output_folder)
+							if download_files:
+								with ZipFile(dlfile,'r') as zipObj:
+									zipObj.extractall(path=output_folder)
 					else:
 						print("Will not download %s, since it aready exists" % dlfile)
 					valid_subjects.append(subject)
 					valid_subject_containers.append(subject_container)
 
-					#lets unzip it
-					output_folder = "%s/%s" % (INPUT_DIR,subject)
-					print("unzipping to... %s" % output_folder)
-					if download_files:
-						with ZipFile(dlfile,'r') as zipObj:
-							zipObj.extractall(path=output_folder)
 					input_feat_folders.append("%s/%s/flywheel/v0/output/%s_%s.feat" % (INPUT_DIR,subject,subject,task))
 
 
