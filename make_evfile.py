@@ -12,11 +12,12 @@ def make_evfile(regressor,subjects,task,outputdir,fw):
 	for subject in subjects:
 		fullsubject = fw.get(subject.id)
 		metadata = fullsubject.info
+		subject_code = subject.label
 		if regressor in metadata:
 			value = metadata[regressor]
 			if (value):
 				allvalues.append(value)
-				included_subjects.append(subject)
+				included_subjects.append(subject_code)
 				print ("%s for subject %s is %s" % (regressor,subject.label,value))
 			else:
 				print("%s for subject %s is empty" % (regressor,subject.label))

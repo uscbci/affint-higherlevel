@@ -69,7 +69,7 @@ print("Found %d extra EVs for %d total including group mean" % (numextraevs,nume
 
 #mean plus positive and negative for each covariate
 numcontrasts = 1 + 2*numextraevs
-
+print("There will be %d total contrasts" % numcontrasts)
 
 #-----------------------------
 # Substitute in some basic variables
@@ -129,7 +129,7 @@ if regressors:
 	# Add in EVs for regressors
 	#-----------------------------
 
-	regressortext = """set fmri(evtitle2) \"EVTITLE\"
+	orig_regressortext = """set fmri(evtitleEVNUM) \"EVTITLE\"
 	set fmri(shapeEVNUM) 2
 	set fmri(convolveshapeEVNUM) 0
 	set fmri(convolve_phaseshapeEVNUM) 0
@@ -137,12 +137,9 @@ if regressors:
 	set fmri(deriv_ynshapeEVNUM) 0
 	set fmri(customshapeEVNUM) \"dummy\"
 	"""
-	contrasttext = """
-	set fmri(conname_real.2) "CONTRASTITLE"
-	set fmri(con_realEVNUM.1) 0.0
-	set fmri(con_realEVNUM.2) 1.0
-	"""
+
 	evnum = 2
+	regressortext = ""
 	for regressor in regressors:
 		
 		#Determine regressor title from filename
@@ -154,8 +151,8 @@ if regressors:
 			print("Could not extract regressor title.")
 		print("Regressor title: %s" % regressortitle)
 
-		regressortext = regressortext.replace("EVTITLE",regressortitle)
-		regressortext = regressortext.replace("EVNUM",str(evnum))
+		regressortextpart = orig_regressortext.replace("EVTITLE",regressortitle)
+		regressortextpart = regressortextpart.replace("EVNUM",str(evnum))
 		
 
 		evfile = open(regressor)
@@ -165,57 +162,58 @@ if regressors:
 
 		x=1
 		for line in lines:
-			text = "set fmri(evg%d.2) %s" % (x,line)
-			regressortext = regressortext + "\\n" + text
+			text = "set fmri(evg%d.%d) %s" % (x,evnum,line)
+			regressortextpart = regressortextpart + "\\n" + text
 			x=x+1
 
 		#EV options
 		text = "set fmri(deriv_yn%d) 0" % evnum
-		regressortext = regressortext +"\\n" + text
+		regressortextpart = regressortextpart +"\\n" + text
 
 		text = "set fmri(tempfilt_yn%d) 0" % evnum
-		regressortext = regressortext +"\\n" + text
+		regressortextpart = regressortextpart +"\\n" + text
 
 
 		#CONTRASTS: Contrast numbers are 2 x (evnum-1)
 		contrastnum = 2 * (evnum-1)
 		text = "set fmri(conname_real.%d) \"%s+\"" % (contrastnum,regressortitle)
-		regressortext = regressortext + "\\n" + text
+		regressortextpart = regressortextpart + "\\n" + text
 
 		text = "set fmri(conpic_real.%d) 1" % contrastnum
-		regressortext = regressortext +"\\n" + text
+		regressortextpart = regressortextpart +"\\n" + text
 
 		for ev in range(1,numevs+1):
-			if ev == contrastnum:
+			if ev == evnum:
 				contrastvalue = 1
 			else:
 				contrastvalue = 0
 			text = "set fmri(con_real%d.%d) %d" % (contrastnum,ev,contrastvalue)
-			regressortext = regressortext + "\\n" + text
+			regressortextpart = regressortextpart + "\\n" + text
 
 		text = "set fmri(conname_real.%d) \"%s-\"" % (contrastnum+1,regressortitle)
-		regressortext = regressortext + "\\n" + text
+		regressortextpart = regressortextpart + "\\n" + text
 
 		text = "set fmri(conpic_real.%d) 1" % (contrastnum+1)
-		regressortext = regressortext +"\\n" + text
+		regressortextpart = regressortextpart +"\\n" + text
 
 		for ev in range(1,numevs+1):
-			if ev == contrastnum:
+			if ev == evnum:
 				contrastvalue = -1
 			else:
 				contrastvalue = 0
 			text = "set fmri(con_real%d.%d) %d" % (contrastnum+1,ev,contrastvalue)
-			regressortext = regressortext + "\\n" + text
+			regressortextpart = regressortextpart + "\\n" + text
 
 		#Describe orthogonalizations
 		allevs = list(range(0,numevs+1))
 		combos = list(itertools.product(allevs,allevs))
 		for combo in combos:
 			text = "set fmri(ortho%d.%d) 0" % (combo[0],combo[1])
-			regressortext = regressortext + "\\n" + text
+			regressortextpart = regressortextpart + "\\n" + text
 
 		#print(regressortext)
 		evnum = evnum + 1
+		regressortext = regressortext + "\n\n" + regressortextpart
 
 
 	regressortext = regressortext.replace("\n","\\\n")
@@ -230,10 +228,6 @@ else:
 	#print(command)
 	call(command,shell=True)
 
-# Title for contrast_real 2
-# set fmri(conname_real.2) ""
-# set fmri(con_real2.1) 0.0
-# set fmri(con_real2.2) 1.0
 
 #-----------------------------
 # Add in group membership column in model
