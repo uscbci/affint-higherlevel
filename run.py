@@ -234,23 +234,23 @@ for task in tasks:
 	## PACKAGE THE OUTPUT
 	##---------------------------------------
 
-	# for cope in copes[task]:
-	# 	input_html_file = "%s/cope%d.feat/report_poststats.html" % (featoutputname,cope)
-	# 	output_html_file = "%s/%s_report_poststats_cope%d.html" % (OUTPUT_DIR,task,cope)
+	for cope in copes[task]:
+		input_html_file = "%s/cope%d.feat/report_poststats.html" % (featoutputname,cope)
+		output_html_file = "%s/%s_report_poststats_cope%d.html" % (OUTPUT_DIR,task,cope)
 
-	# 	print("Preparing %s to %s" % (input_html_file,output_html_file))
+		print("Preparing %s to %s" % (input_html_file,output_html_file))
 
-	# 	command = 'python /opt/webpage2html/webpage2html.py -q -s %s > "%s"' % (input_html_file,output_html_file)
-	# 	print(command)
-	# 	call(command,shell=True)
+		command = 'python /opt/webpage2html/webpage2html.py -q -s %s > "%s"' % (input_html_file,output_html_file)
+		print(command)
+		call(command,shell=True)
 
-	# print("\nZipping feat directory....")
-	# output_filename = "%s/%s.zip" % (OUTPUT_DIR,task)
-	# #shutil.make_archive(output_filename, 'zip', featoutputname)
+	print("\nZipping feat directory....")
+	output_filename = "%s/%s.zip" % (OUTPUT_DIR,task)
+	#shutil.make_archive(output_filename, 'zip', featoutputname)
 
-	# zf = ZipFile(output_filename, mode='w', allowZip64 = True)
-	# zipdir(featoutputname,zf)
-	# zf.close()
+	zf = ZipFile(output_filename, mode='w', allowZip64 = True)
+	zipdir(featoutputname,zf)
+	zf.close()
 
-	# print("\nCleaning up...")
-	# shutil.rmtree(featoutputname, ignore_errors=True)
+	print("\nCleaning up...")
+	shutil.rmtree(featoutputname, ignore_errors=True)
